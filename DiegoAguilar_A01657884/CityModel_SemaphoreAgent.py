@@ -41,23 +41,6 @@ class CityModel(mesa.Model):
         self.initialize_city_objects()
         self.initialize_semaphores()
 
-        self.horizontal_left_segments = [(0, range(1, 24)), (range(12, 13), range(2, 13))]
-        self.horizontal_right_segments = [(2, range(1, 25)), (15, range(13, 25)), (24, range(1, 25))]
-        self.vertical_down_segments = [(3, range(1, 25)), (9, range(1, 25))]
-        self.vertical_up_segments = [(15, range(1, 25)), (21, range(1, 25))]
-
-    def is_movement_allowed(self, pos, direction):
-        x, y = pos
-        if direction == "left":
-            return any(x == row and y in col_range for row, col_range in self.horizontal_left_segments)
-        elif direction == "right":
-            return any(x == row and y in col_range for row, col_range in self.horizontal_right_segments)
-        elif direction == "down":
-            return any(y == col and x in row_range for col, row_range in self.vertical_down_segments)
-        elif direction == "up":
-            return any(y == col and x in row_range for col, row_range in self.vertical_up_segments)
-        return False
-
     def initialize_semaphores(self):
         self.semaphores = {}
         semaphores_positions = {
