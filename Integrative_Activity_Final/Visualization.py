@@ -1,5 +1,5 @@
 import mesa
-print(f"Mesa version: {mesa.version}")
+#print(f"Mesa version: {mesa.version}")
 
 from mesa.visualization import SolaraViz, make_plot_component, make_space_component
 
@@ -31,14 +31,14 @@ proplayer_portrayal = {"city_objects": {"color":"blue", "colorbar": False}, }
 SpaceGraph = make_space_component(agent_portrayal, propertylayer_portrayal=proplayer_portrayal)
 
 proplayer_portrayal1 = {"parking_lot": {"color":"yellow", "colorbar": False}, }
-SpaceGraph = make_space_component(agent_portrayal, propertylayer_portrayal=proplayer_portrayal1)
+SpaceGraph2 = make_space_component(agent_portrayal, propertylayer_portrayal1=proplayer_portrayal1)
 
 proplayer_portrayal2 = {"city_objects": {"color":"green", "colorbar": False}, }
-SpaceGraph = make_space_component(agent_portrayal, propertylayer_portrayal=proplayer_portrayal2)
+SpaceGraph3 = make_space_component(agent_portrayal, propertylayer_portrayal2=proplayer_portrayal2)
 
 page = SolaraViz(
     model1,
-    components=[SpaceGraph],
+    components=[SpaceGraph, SpaceGraph2, SpaceGraph3],
     name="Integrative Activity - Team7",
 )
 # This is required to render the visualization in the Jupyter notebook
