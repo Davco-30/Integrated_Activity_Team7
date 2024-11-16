@@ -1,5 +1,4 @@
 import mesa
-import numpy as np
 print(f"Mesa version: {mesa.version}")
 
 from mesa.visualization import SolaraViz, make_plot_component, make_space_component

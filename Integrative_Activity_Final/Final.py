@@ -1,5 +1,6 @@
 import mesa
 import numpy as np
+
 class Car(mesa.Agent):
     def __init__(self, unique_id, start_parking, target_parking, model):
         super().__init__(model)

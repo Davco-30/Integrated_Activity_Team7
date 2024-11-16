@@ -1,3 +1,5 @@
+import mesa
+import numpy as np
 class SemaphoreAgent(mesa.Agent):
     """An agent representing a traffic semaphore"""
 
