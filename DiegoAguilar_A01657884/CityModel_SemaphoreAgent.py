@@ -65,7 +65,29 @@ class CityModel(mesa.Model):
     def initialize_city_objects(self):
         """Initialize buildings, parking lots and a roundabout on the grid using PropertyLayer."""
         city_objects_layer = mesa.space.PropertyLayer("city_objects", self.grid.width, self.grid.height, np.int64(0), np.int64)
-        self.grid.properties["city_objects"] = city_objects_layer
+        city_objects_layer.set_cell((2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (8, 2), (10, 2), (11, 2), (3, 3), (4, 3), (5, 3), (6, 3), (7, 3), (8, 3), (9, 3), (10, 3), (11, 3),
+                     (2, 4), (3, 4), (4, 4), (5, 4), (6, 4), (7, 4), (8, 4), (9, 4), (10, 4), (2, 5), (3, 5), (4, 5), (5, 5), (7, 5), (8, 5), (9, 5), (10, 5), (11, 5),
+                     (2, 8), (3, 8), (4, 8), (7, 8), (9, 8), (10, 8), (11, 8), (2, 9), (3, 9), (4, 9), (7, 9), (8, 9), (9, 9), (10, 9), (11, 9), (2, 10), (3, 10), (7, 10),
+                     (8, 10), (9, 10), (10, 10), (2, 11), (3, 11), (4, 11), (7, 11), (8, 11), (9, 11), (10, 11), (11, 11), (16, 2), (17, 2), (20, 2), (21, 2), (16, 3), (20, 3),
+                     (21, 3), (16, 4), (17, 4), (21, 4), (16, 5), (17, 5), (20, 5), (21, 5), (16, 8), (17, 8), (20, 8), (21, 8), (16, 9), (17, 9), (20, 9), (17, 10), (20, 10), (21, 10),
+                     (16, 11), (17, 11), (20, 11), (21, 11), (2, 16), (3, 16), (4, 16), (5, 16), (8, 16), (9, 16), (10, 16), (11, 16), (3, 17), (4, 17), (5, 17), (8, 17), (9, 17), (10, 17),
+                     (11, 17), (2, 18), (3, 18), (4, 18), (5, 18), (8, 18), (9, 18), (10, 18), (11, 18), (2, 19), (3, 19), (4, 19), (5, 19), (8, 19), (9, 19), (10, 19), (11, 19), (2, 20),
+                     (3, 20), (4, 20), (9, 20), (10, 20), (11, 20), (2, 21), (3, 21), (4, 21), (5, 21), (8, 21), (9, 21), (10, 21), (11, 21), (16, 16), (17, 16), (18, 16), (19, 16), (20, 16),
+                     (21, 16), (16, 17), (18, 17), (20, 17), (21, 17), (16, 20), (17, 20), (18, 20), (20, 20), (21, 20), (16, 21), (17, 21), (18, 21), (19, 21), (20, 21), (21, 21), 1)
+        self.grid = mesa.space.MultiGrid(self.width, self.height, True, city_objects_layer)
+
+        
+        parking_lots_layer = mesa.space.PropertyLayer("parking_lots", self.grid.width, self.grid.height, np.int64(0), np.int64)
+        parking_lots_layer.set_cell((9, 2), (2, 3), (17, 3), (11, 4), (20, 4), (6, 5), (8, 8), (21, 9), (4, 10), (11, 10), (16, 10), (2, 17), (17, 17), (19, 17), (5, 20), (8, 20), (19, 20), 1)
+        self.grid = mesa.space.MultiGrid(self.width, self.height, True, parking_lots_layer)
+
+        roundabout_layer = mesa.space.PropertyLayer("roundabout", self.grid.width, self.grid.height, np.int64(0), np.int64)
+        roundabout_layer.set_cell((13, 13), (14, 13), (13, 14), (14, 14), 1)
+        self.grid = mesa.space.MultiGrid(self.width, self.height, True, roundabout_layer)
+
+        semaphore_layer = mesa.space.PropertyLayer("semaphore", self.grid.width, self.grid.height, np.int64(0), np.int64)
+        semaphore_layer.set_cell((18, 2), (19, 2),(17, 0), (17, 1),(22, 5), (23, 5),(2, 6), (2, 7),(0, 8), (1, 8),(7, 6), (7, 7),(5, 8), (6, 8), (21, 6), (21, 7), (14, 17), (15, 17),(16, 18), (16, 19), 1)
+        self.grid = mesa.space.MultiGrid(self.width, self.height, True, semaphore_layer)
 
         #Define buildings coordinates
         buildings = [(2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (8, 2), (10, 2), (11, 2), (3, 3), (4, 3), (5, 3), (6, 3), (7, 3), (8, 3), (9, 3), (10, 3), (11, 3),
