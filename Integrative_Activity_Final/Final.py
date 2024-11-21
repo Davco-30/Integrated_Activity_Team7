@@ -1,5 +1,7 @@
 import mesa
+import seaborn as sns
 import numpy as np
+import pandas as pd
 
 class Car(mesa.Agent):
     def __init__(self, unique_id, start_parking, target_parking, model):

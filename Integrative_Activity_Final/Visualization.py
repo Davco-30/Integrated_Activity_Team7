@@ -1,10 +1,7 @@
-import mesa
-#print(f"Mesa version: {mesa.version}")
-
-from mesa.visualization import SolaraViz, make_plot_component, make_space_component
+from mesa.visualization import SolaraViz, make_space_component
 
 # Import the local 
-from Final import Final
+from Final import CityModel
 
 def agent_portrayal(agent):
     return {
@@ -12,33 +9,19 @@ def agent_portrayal(agent):
         "size": 50,
     }
 
-def agent_portrayal1(agent):
-    return {
-        "color": "tab:yellow",
-        "size": 50,
-    }
-
-def agent_portrayal2(agent):
-    return {
-        "color": "tab:green",
-        "size": 50,
-    }
+propertylayer_portrayal = {
+    "city_objects": {"color": "blue", "colorbar": False},
+    "parking_lot": {"color": "yellow", "colorbar": False},
+    "semaphores": {"color": "green", "colorbar": False},
+}
 
 # Create initial model instance
-model1 = Final(50, 24, 24)
+model1 = CityModel(10)
 
-proplayer_portrayal = {"city_objects": {"color":"blue", "colorbar": False}, }
-SpaceGraph = make_space_component(agent_portrayal, propertylayer_portrayal=proplayer_portrayal)
-
-proplayer_portrayal1 = {"parking_lot": {"color":"yellow", "colorbar": False}, }
-SpaceGraph2 = make_space_component(agent_portrayal, propertylayer_portrayal1=proplayer_portrayal1)
-
-proplayer_portrayal2 = {"city_objects": {"color":"green", "colorbar": False}, }
-SpaceGraph3 = make_space_component(agent_portrayal, propertylayer_portrayal2=proplayer_portrayal2)
-
+SpaceGraph = make_space_component(agent_portrayal, propertylayer_portrayal=propertylayer_portrayal)
 page = SolaraViz(
     model1,
-    components=[SpaceGraph, SpaceGraph2, SpaceGraph3],
+    components=[SpaceGraph],
     name="Integrative Activity - Team7",
 )
 # This is required to render the visualization in the Jupyter notebook
