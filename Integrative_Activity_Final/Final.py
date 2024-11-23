@@ -207,7 +207,7 @@ class SemaphoreAgent(mesa.Agent):
 class CityModel(mesa.Model):
     """A model of a city with some number of cars, semaphores, buildings, parking lots and a roundabout."""
 
-    def __init__(self, cars, seed=None):
+    def __init__(self, cars=10, seed=None):
         super().__init__(seed=seed)
         self.num_cars = cars
         self.cars_list = []
@@ -224,7 +224,7 @@ class CityModel(mesa.Model):
           target_parking = self.random.choice(available_parking_lots)
           target_parking = self.parking_lots[10]
 
-          car = Car(unique_id=-(i+1), start_parking=start_parking, target_parking=target_parking, model=self)
+          car = Car(-(i+1), start_parking, target_parking, self)
           self.cars_list.append(car)
           self.grid.place_agent(car, start_parking)
 
