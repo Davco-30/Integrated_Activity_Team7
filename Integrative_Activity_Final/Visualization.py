@@ -1,33 +1,49 @@
 import mesa
-from mesa.visualization import SolaraViz, make_space_component
 print(mesa.__version__)
+from mesa.visualization import SolaraViz, make_space_component
 
-# Import the local 
+# Importar la clase CityModel
 from Final import CityModel
+from Final import Car
+from Final import SemaphoreAgent
 
 def agent_portrayal(agent):
-    return {
-        "color": "tab:blue",
-        "size": 50,
-    }
-model_params = {"cars":10}
+    size = 20
+    color = "tab:red"
+    shape = "circle"
 
-propertylayer_portrayal = {
-    "city_objects": {"color": "blue", "colorbar": False},
-    "parking_lot": {"color": "yellow", "colorbar": False},
-    "semaphores": {"color": "green", "colorbar": False},
-}
+    if isinstance(agent, Car):
+        size = 50
+        color = "tab:blue"
+        shape = "circle"
+    elif isinstance(agent, SemaphoreAgent):
+        if agent.light_state == "red":
+            color = "red"
+        if agent.light_state == "yellow":
+            color = "yellow"
+        if agent.light_state == "green":
+            color = "green"    
+    return {"size": size, "color": color, "shape":shape}
 
-# Create initial model instance
-model1 = CityModel(cars=10)
+# Configurar cómo se visualizan las capas de propiedades
+propertylayer_portrayal = {"buildings": {"color": "blue", "colorbar": False}, "semaphores_positions":{"color": "green", "colorbar": False}
+                           "roundabout_cells":{"color": "green", "colorbar": False}}
 
+# Crear instancia inicial del modelo
+model_params = {"cars": 17}
+try:
+    model1 = CityModel(cars=model_params["cars"])
+except TypeError as e:
+    print(f"Error creating CityModel: {e}")
+    print("Please check the CityModel class definition and ensure it accepts 'cars' parameter correctly.")
+    exit()
+
+# Configurar componente de visualización
 SpaceGraph = make_space_component(agent_portrayal, propertylayer_portrayal=propertylayer_portrayal)
 page = SolaraViz(
     model1,
     components=[SpaceGraph],
     model_params=model_params,
     name="Integrative Activity - Team7",
-    
 )
-# This is required to render the visualization in the Jupyter notebook
 page

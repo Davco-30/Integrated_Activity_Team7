@@ -1,7 +1,9 @@
 from ast import Return
+import mesa
+import numpy as np
 class Car(mesa.Agent):
-    def __init__(self, unique_id, start_parking, target_parking, model):
-        super().__init__(model)
+    def _init_(self, unique_id, start_parking, target_parking, model):
+        super()._init_(model)
         self.unique_id = unique_id
         self.start_parking = start_parking
         self.target_parking = target_parking
@@ -194,19 +196,23 @@ class Car(mesa.Agent):
 class SemaphoreAgent(mesa.Agent):
     """An agent representing a traffic semaphore"""
 
-    def __init__(self, unique_id, model, positions, green_duration=5, red_duration=5):
-        super().__init__(model)
+    def _init_(self, unique_id, model, positions, green_duration=5, red_duration=5, paired_semaphore=None):
+        super()._init_(model)
         self.positions = positions
-        self.light_state = "green" if unique_id % 2 == 0 else "red"
+       # self.light_state = "green" if unique_id % 2 == 0 else "red"
+        self.light_state = "yellow"
         self.green_duration = green_duration
         self.red_duration = red_duration
         self.step_counter = 0
+        self.nearby_cars = []
 
 
     def update_state(self):
         for position in self.positions:
             if self.light_state == "green":
                   state_value = 18
+            elif self.light_state == "yellow":
+                  state_value = 25
             else:
                   state_value = 19
             self.model.grid.properties["city_objects"].set_cell(position, state_value)
@@ -228,11 +234,12 @@ class SemaphoreAgent(mesa.Agent):
 class CityModel(mesa.Model):
     """A model of a city with some number of cars, semaphores, buildings, parking lots and a roundabout."""
 
-    def __init__(self, cars, seed=None):
-        super().__init__(seed=seed)
+    def _init_(self, cars, seed=None):
+        super()._init_(seed=seed)
         self.num_cars = cars
         self.cars_list = []
         self.grid = mesa.space.MultiGrid(24, 24, False)
+        self.roundabout_cells = [(13, 13), (14, 13), (13, 14), (14, 14)]
         self.initialize_city_objects()
         self.initialize_semaphores()
         self.initialize_cars()
@@ -320,20 +327,26 @@ class CityModel(mesa.Model):
           if value is not None:
             self.grid.properties["city_objects"].set_cell(position, -1)
 
-
-        #Define roundabout coordinates
-        roundabout = [(13, 13), (14, 13), (13, 14), (14, 14)]
-        for position in roundabout:
+        # Define roundabout coordinates
+        for position in self.roundabout_cells:
             self.grid.properties["city_objects"].set_cell(position, 21)
+
+
+    def update_roundabout(self):
+        for position in self.roundabout_cells:
+            current_value = self.grid.properties["city_objects"].data[position]
+            if current_value != -1:
+                self.grid.properties["city_objects"].set_cell(position, 21)
 
     def step(self):
       print("Step ", self.steps)
       for semaphore in self.semaphores.values():
           semaphore.toggle_light()
       self.agents.shuffle_do("step")
+      self.update_roundabout()
       print(self.grid.properties["city_objects"].data)
-      
       all_arrived = all(car.state == "arrived" for car in self.cars_list)
       if all_arrived:
           print("All cars have parked.")
           self.running = False
+        

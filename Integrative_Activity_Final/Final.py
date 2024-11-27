@@ -1,8 +1,6 @@
+from ast import Return
 import mesa
-import seaborn as sns
 import numpy as np
-import pandas as pd
-
 class Car(mesa.Agent):
     def __init__(self, unique_id, start_parking, target_parking, model):
         super().__init__(model)
@@ -15,9 +13,9 @@ class Car(mesa.Agent):
         self.exited_parking = False
 
         # Movement restrictions
-        self.y_change_down = [0, 1, 12, 13] + self.generate_range(15, 21, 6, 7)
-        self.y_change_up = [14, 15, 22, 23] + self.generate_range(22, 16, 18, 19) + self.generate_range(12, 2, 6, 7)
-        self.x_change_left = [0, 1, 12, 13] + self.generate_range(6, 7, 22, 16) + self.generate_range(5, 6, 12, 7) + self.generate_range(18, 19, 6, 1)
+        self.y_change_down = [0, 1, 12, 13] + self.generate_range(15, 22, 6, 7)
+        self.y_change_up = [14, 15, 22, 23] + self.generate_range(22, 15, 18, 19) + self.generate_range(12, 1, 6, 7)
+        self.x_change_left = [0, 1, 12, 13] + self.generate_range(6, 7, 22, 15) + self.generate_range(5, 6, 12, 7) + self.generate_range(18, 19, 6, 1)
         self.x_change_right = [14, 15, 22, 23] + self.generate_range(18, 19, 7, 12)
 
 
@@ -27,7 +25,7 @@ class Car(mesa.Agent):
             x_range = range(start_x, end_x + 1)
         else:
             x_range = range(start_x, end_x - 1, -1)
-        
+
         if start_y <= end_y:
             y_range = range(start_y, end_y + 1)
         else:
@@ -42,19 +40,19 @@ class Car(mesa.Agent):
 
     def step(self):
         if not self.exited_parking:
-            self.exit_parking()
-        elif self.pos != self.target_parking:
-            self.move()
+          self.exit_parking()
         else:
-            self.state = "idle"
+          if self.pos != self.target_parking:
+            self.move()
+          else:
+            self.state = "arrived"
             self.direction = None
-            print(f"Car {self.unique_id} has reached its target parking at {self.target_parking}. Stopping the model.")
-            self.model.running = False 
+            print(f"Car {self.unique_id} has reached its target parking at {self.target_parking}. No more moves.")
 
 
     def exit_parking(self):
         possible_steps = self.model.grid.get_neighborhood(self.pos, moore=False, include_center=False)
-        
+
         valid_steps = [
             step for step in possible_steps
             if self.model.grid.properties["city_objects"].data[step] == 0
@@ -73,15 +71,18 @@ class Car(mesa.Agent):
 
 
     def move(self):
-        print(f"Car starts at {self.start_parking} and goes to {self.target_parking}")
         print(f"Car {self.unique_id} at position {self.pos} moving in direction {self.direction}")
 
+        adjacent_cells = self.model.grid.get_neighborhood(self.pos, moore=False, include_center=False)
+
         possible_adjacent_cells = [
-        (self.pos[0] - 1, self.pos[1]),
-        (self.pos[0] + 1, self.pos[1]),
-        (self.pos[0], self.pos[1] - 1),
-        (self.pos[0], self.pos[1] + 1),
+            step for step in adjacent_cells
+            if self.model.grid.properties["city_objects"].data[step] == 0
         ]
+
+        print(f"Adjacent cells: {adjacent_cells}. Possible cells: {possible_adjacent_cells}")
+
+
 
         if self.target_parking in possible_adjacent_cells:
             print(f"Car {self.unique_id} is adjacent to target parking. Moving directly to {self.target_parking}.")
@@ -92,6 +93,7 @@ class Car(mesa.Agent):
 
             self.state = "moving"
             print(f"Car {self.unique_id} moved to target parking at {self.target_parking}.")
+            new_position = self.target_parking
         else:
             possible_steps = self.model.grid.get_neighborhood(self.pos, moore=False, include_center=False)
             valid_steps = [step for step in possible_steps if self.is_valid_step(step)]
@@ -111,6 +113,12 @@ class Car(mesa.Agent):
             self.state = "moving"
             print(f"Car {self.unique_id} moved to {new_position}")
 
+        #Enter the range for being detected by the semaphore
+        for semaphore in self.model.semaphores.values():
+            if new_position in semaphore.range_cells:
+                semaphore.manage_light_state()
+
+
 
     def can_move(self):
         current_position = self.pos
@@ -123,7 +131,7 @@ class Car(mesa.Agent):
             for neighbor in self.model.grid.iter_neighbors(current_position, moore=False, include_center=False):
                 if isinstance(neighbor, SemaphoreAgent) and neighbor.light_state == "green":
                     return True
-            return False 
+            return False
 
         return True
 
@@ -143,16 +151,39 @@ class Car(mesa.Agent):
             else:
                 return False
 
-        if step_y == current_y:
-            if step_x < current_x and current_y in self.y_change_up:
-                return True
-            if step_x > current_x and current_y in self.y_change_down:
+        # Restricciones para columnas completas (y_change_down y y_change_up)
+        if step_y in self.y_change_down[:4]:
+            if step_x > current_x:
                 return True
 
-        if step_x == current_x:
-            if step_y < current_y and current_x in self.x_change_left: 
+        if step_y in self.y_change_up[:4]:
+            if step_x < current_x:
                 return True
-            if step_y > current_y and current_x in self.x_change_right: 
+
+        # Restricciones para filas completas (x_change_left y x_change_right)
+        if step_x in self.x_change_left[:4]:
+            if step_y < current_y:
+                return True
+
+        if step_x in self.x_change_right[:4]:
+            if step_y > current_y:
+                return True
+
+        # Restricciones para regiones específicas (rectángulos)
+        if (step_x, step_y) in self.y_change_down[4:]:
+            if step_x > current_x:
+                return True
+
+        if (step_x, step_y) in self.y_change_up[4:]:
+            if step_x < current_x:
+                return True
+
+        if (step_x, step_y) in self.x_change_left[4:]:
+            if step_y < current_y:
+                return True
+
+        if (step_x, step_y) in self.x_change_right[4:]:
+            if step_y > current_y:
                 return True
 
         return False
@@ -173,60 +204,92 @@ class Car(mesa.Agent):
 class SemaphoreAgent(mesa.Agent):
     """An agent representing a traffic semaphore"""
 
-    def __init__(self, unique_id, model, positions, green_duration=5, red_duration=5):
+    def __init__(self, unique_id, model, positions, green_duration=5, red_duration=5, paired_semaphore=None, range_cells=None):
         super().__init__(model)
         self.positions = positions
-        self.light_state = "green" if unique_id % 2 == 0 else "red"
+        self.light_state = "yellow"
         self.green_duration = green_duration
         self.red_duration = red_duration
+        self.paired_semaphore = paired_semaphore
         self.step_counter = 0
-
+        self.waiting_cars = set()
+        self.range_cells = range_cells if range_cells else []
 
     def update_state(self):
         for position in self.positions:
             if self.light_state == "green":
-                  state_value = 18
+                state_value = 18
+            elif self.light_state == "red":
+                state_value = 19
             else:
-                  state_value = 19
+                state_value = 25
             self.model.grid.properties["city_objects"].set_cell(position, state_value)
 
+    def check_car_presence(self):
+        cars_in_range = set()
+        for pos in self.range_cells:
+            for agent in self.model.grid.get_cell_list_contents(pos):
+                if isinstance(agent, Car):
+                    cars_in_range.add(agent.unique_id)
+        return cars_in_range
 
-    def toggle_light(self):
+
+    def manage_light_state(self):
+        cars_in_range = self.check_car_presence()
+        self.waiting_cars = cars_in_range
+
+        paired_semaphore = self.model.semaphores[self.paired_semaphore]
+
+        # Normal behavior when neither semaphore is green
+        if cars_in_range:
+            # Turn this semaphore green if there are cars in range
+            self.light_state = "green"
+            paired_semaphore.light_state = "red"
+        elif paired_semaphore.waiting_cars:
+            # Turn paired semaphore green if it has cars waiting
+            self.light_state = "red"
+            paired_semaphore.light_state = "green"
+        else:
+            # Default to yellow for both if no cars are present at either semaphore
+            self.light_state = "yellow"
+            paired_semaphore.light_state = "yellow"
+
         self.update_state()
-        self.step_counter += 1
-        if (self.light_state == "green" and self.step_counter >= self.green_duration) or (self.light_state == "red" and self.step_counter >= self.red_duration):
-            if self.light_state == "red":
-                self.light_state = "green"
-            else:
-                self.light_state = "red"
-            self.step_counter = 0
-            self.update_state()
+        paired_semaphore.update_state()
 
 
 
 class CityModel(mesa.Model):
     """A model of a city with some number of cars, semaphores, buildings, parking lots and a roundabout."""
 
-    def __init__(self, cars=10, seed=None):
+    def __init__(self, cars, seed=None):
         super().__init__(seed=seed)
         self.num_cars = cars
         self.cars_list = []
         self.grid = mesa.space.MultiGrid(24, 24, False)
+        self.roundabout_cells = [(13, 13), (14, 13), (13, 14), (14, 14)]
         self.initialize_city_objects()
         self.initialize_semaphores()
         self.initialize_cars()
         self.steps = 0
 
     def initialize_cars(self):
-        for i in range(self.num_cars):
-          start_parking = self.parking_lots[i % len(self.parking_lots)]
-          available_parking_lots = [lot for lot in self.parking_lots if lot != start_parking]
-          target_parking = self.random.choice(available_parking_lots)
-          target_parking = self.parking_lots[10]
+      # Only 17 existing parking lots
+      if self.num_cars > 17:
+          raise ValueError("All parking lots have been assigned to a car. No more spaces.")
 
-          car = Car(-(i+1), start_parking, target_parking, self)
-          self.cars_list.append(car)
-          self.grid.place_agent(car, start_parking)
+      for i in range(self.num_cars):
+        start_parking = self.parking_lots[i % len(self.parking_lots)]
+        if i == len(self.parking_lots) - 1:
+          target_parking = self.parking_lots[0]
+        else:
+          target_parking = self.parking_lots[i + 1]
+
+
+        car = Car(unique_id=-(i+1), start_parking=start_parking, target_parking=target_parking, model=self)
+        self.cars_list.append(car)
+        self.grid.place_agent(car, start_parking)
+        print(f"Car {i + 1}: Start {start_parking}, Target {target_parking}")
 
 
     def initialize_semaphores(self):
@@ -245,8 +308,37 @@ class CityModel(mesa.Model):
             10: [(16, 18), (16, 19)]
         }
 
+        semaphore_pairs = {
+            1: 2,
+            2: 1,
+            3: 8,
+            8: 3,
+            4: 5,
+            5: 4,
+            6: 7,
+            7: 6,
+            9: 10,
+            10: 9,
+        }
+
+        #Range within which an approaching car is detected
+        semaphore_ranges = {
+        1: [(18, 1), (19, 1), (18, 2), (19, 2), (18, 3), (19, 3), (18, 4), (19, 4)],
+        2: [(15, 0), (15, 1), (16, 0), (16, 1), (17, 0), (17, 1), (18, 0), (18, 1), (19, 0), (19, 1)],
+        3: [(22, 3), (23, 3), (22, 4), (23, 4), (22, 5), (23, 5), (22, 6), (23, 6), (22, 7), (23, 7)],
+        4: [(1, 6), (1, 7), (2, 6), (2, 7), (3, 6), (3, 7), (4, 6), (4, 7)],
+        5: [(0, 6), (1, 6), (0, 7), (1, 7), (0, 8), (1, 8), (0, 9), (1, 9), (0, 10), (1, 10)],
+        6: [(5, 6), (5, 7), (6, 6), (6, 7), (7, 6), (7, 7), (8, 6), (8, 7), (9, 6), (9, 7)],
+        7: [(5, 7), (6, 7), (5, 8), (6, 8), (5, 9), (6, 9), (5, 10), (6, 10)],
+        8: [(19, 6), (19, 7), (20, 6), (20, 7), (21, 6), (21, 7), (22, 6), (22, 7)],
+        9: [(14, 16), (15, 16), (14, 17), (15, 17), (14, 18), (15, 18), (14, 19), (15, 19)],
+        10: [(15, 18), (15, 19), (16, 18), (16, 19), (17, 18), (17, 19), (18, 18), (18, 19)]
+        }
+
         for semaphore_id, positions in semaphores_positions.items():
-            semaphore = SemaphoreAgent(unique_id=semaphore_id, model = self, positions=positions)
+            paired_id = semaphore_pairs.get(semaphore_id, None)
+            range_cells = semaphore_ranges.get(semaphore_id, [])
+            semaphore = SemaphoreAgent(unique_id=semaphore_id, model=self, positions=positions, paired_semaphore=paired_id, range_cells=range_cells)
             self.semaphores[semaphore_id] = semaphore
             self.grid.place_agent(semaphore, positions[0])
 
@@ -288,15 +380,25 @@ class CityModel(mesa.Model):
           if value is not None:
             self.grid.properties["city_objects"].set_cell(position, -1)
 
-
-        #Define roundabout coordinates
-        roundabout = [(13, 13), (14, 13), (13, 14), (14, 14)]
-        for position in roundabout:
+        # Define roundabout coordinates
+        for position in self.roundabout_cells:
             self.grid.properties["city_objects"].set_cell(position, 21)
+
+
+    def update_roundabout(self):
+        for position in self.roundabout_cells:
+            current_value = self.grid.properties["city_objects"].data[position]
+            if current_value != -1:
+                self.grid.properties["city_objects"].set_cell(position, 21)
 
     def step(self):
       print("Step ", self.steps)
       for semaphore in self.semaphores.values():
-          semaphore.toggle_light()
+          semaphore.manage_light_state()
       self.agents.shuffle_do("step")
+      self.update_roundabout()
       print(self.grid.properties["city_objects"].data)
+      all_arrived = all(car.state == "arrived" for car in self.cars_list)
+      if all_arrived:
+          print("All cars have parked.")
+          self.running = False
