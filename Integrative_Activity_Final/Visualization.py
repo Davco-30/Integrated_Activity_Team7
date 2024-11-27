@@ -2,6 +2,7 @@ import mesa
 print(mesa.__version__)
 from mesa.visualization import SolaraViz, make_space_component
 
+
 # Importar la clase CityModel
 from Final import CityModel
 from Final import Car
@@ -14,20 +15,22 @@ def agent_portrayal(agent):
 
     if isinstance(agent, Car):
         size = 50
-        color = "tab:blue"
+        color = "tab:pink"
         shape = "circle"
     elif isinstance(agent, SemaphoreAgent):
         if agent.light_state == "red":
             color = "red"
+            shape = "rectangular"
         if agent.light_state == "yellow":
             color = "yellow"
+            shape = "rectangular"
         if agent.light_state == "green":
-            color = "green"    
+            color = "green"   
+            shape = "rectangular" 
     return {"size": size, "color": color, "shape":shape}
 
 # Configurar cómo se visualizan las capas de propiedades
-propertylayer_portrayal = {"buildings": {"color": "blue", "colorbar": False}, "semaphores_positions":{"color": "green", "colorbar": False}
-                           "roundabout_cells":{"color": "green", "colorbar": False}}
+propertylayer_portrayal = {"city_objects": {"color": "blue", "colorbar": False}}
 
 # Crear instancia inicial del modelo
 model_params = {"cars": 17}

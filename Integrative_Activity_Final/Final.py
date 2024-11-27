@@ -266,6 +266,10 @@ class CityModel(mesa.Model):
         super().__init__(seed=seed)
         self.num_cars = cars
         self.cars_list = []
+        '''buildingprint = mesa.space.PropertyLayer("buildings", 24, 24, np.float64(0), np.float64(0))
+        parkingsprint = mesa.space.PropertyLayer("parking_lots", 24, 24, np.float64(0), np.float64(0))
+        roundaboutprint = mesa.space.PropertyLayer("roundabout", 24, 24, np.float64(0), np.float64(0))
+        semaphoreprint = mesa.space.PropertyLayer("semaphore_pairs", 24, 24, np.float64(0), np.float64(0))'''
         self.grid = mesa.space.MultiGrid(24, 24, False)
         self.roundabout_cells = [(13, 13), (14, 13), (13, 14), (14, 14)]
         self.initialize_city_objects()
@@ -340,7 +344,7 @@ class CityModel(mesa.Model):
             range_cells = semaphore_ranges.get(semaphore_id, [])
             semaphore = SemaphoreAgent(unique_id=semaphore_id, model=self, positions=positions, paired_semaphore=paired_id, range_cells=range_cells)
             self.semaphores[semaphore_id] = semaphore
-            self.grid.place_agent(semaphore, positions[0])
+            self.grid.place_agent(semaphore, positions[0])#crear agente en 1 tmb
 
 
     def initialize_city_objects(self):
@@ -372,6 +376,10 @@ class CityModel(mesa.Model):
             if value == 0:
               self.grid.properties["city_objects"].set_cell(position, parking_id)
               self.parking_lot_map[parking_id] = position
+
+        self.roundabout_cells = [(13, 13), (14, 13), (13, 14), (14, 14)]
+        for position in self.roundabout_cells:
+            self.grid.properties["city_objects"].set_cell(position, 21)
 
         #Define cars coordinates
         for car in self.cars_list:
